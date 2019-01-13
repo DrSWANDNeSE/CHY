@@ -1,0 +1,158 @@
+/*
+ Navicat MySQL Data Transfer
+
+ Source Server         : nese
+ Source Server Type    : MySQL
+ Source Server Version : 50723
+ Source Host           : localhost:3306
+ Source Schema         : checkspace
+
+ Target Server Type    : MySQL
+ Target Server Version : 50723
+ File Encoding         : 65001
+
+ Date: 13/01/2019 09:48:34
+*/
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for check_
+-- ----------------------------
+DROP TABLE IF EXISTS `check_`;
+CREATE TABLE `check_`  (
+  `Sno` int(10) NOT NULL,
+  `Cdate` int(8) NOT NULL,
+  `Cday` int(2) NOT NULL,
+  `Cmonthday` int(2) NOT NULL,
+  `Cleaver_day` int(2) NOT NULL,
+  PRIMARY KEY (`Sno`, `Cdate`) USING BTREE,
+  CONSTRAINT `check__ibfk_1` FOREIGN KEY (`Sno`) REFERENCES `staff` (`Sno`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for department
+-- ----------------------------
+DROP TABLE IF EXISTS `department`;
+CREATE TABLE `department`  (
+  `Dno` int(10) NOT NULL,
+  `Dname` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `Dmanager` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `Dpeople` int(3) NULL DEFAULT NULL,
+  PRIMARY KEY (`Dno`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for staff
+-- ----------------------------
+DROP TABLE IF EXISTS `staff`;
+CREATE TABLE `staff`  (
+  `Sno` int(10) NOT NULL AUTO_INCREMENT,
+  `Dno` int(10) NOT NULL,
+  `Sname` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Ssex` char(2) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Sage` int(10) NOT NULL,
+  `Sdepartment` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Sposition` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  PRIMARY KEY (`Sno`, `Dno`) USING BTREE,
+  INDEX `Dno`(`Dno`) USING BTREE,
+  CONSTRAINT `staff_ibfk_1` FOREIGN KEY (`Dno`) REFERENCES `department` (`Dno`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 1021 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for turnover
+-- ----------------------------
+DROP TABLE IF EXISTS `turnover`;
+CREATE TABLE `turnover`  (
+  `Sno` int(10) NOT NULL,
+  `Tdate` int(8) NOT NULL,
+  `Tname` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Tbefore` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Tafter` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  PRIMARY KEY (`Sno`, `Tdate`) USING BTREE,
+  CONSTRAINT `turnover_ibfk_1` FOREIGN KEY (`Sno`) REFERENCES `staff` (`Sno`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for users
+-- ----------------------------
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users`  (
+  `Usno` int(10) NOT NULL AUTO_INCREMENT,
+  `Upassword` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`Usno`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1021 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wages
+-- ----------------------------
+DROP TABLE IF EXISTS `wages`;
+CREATE TABLE `wages`  (
+  `Sno` int(10) NOT NULL,
+  `Wdate` int(10) NOT NULL,
+  `Wstatus` char(2) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Wbase` int(5) NOT NULL,
+  `Wsubsidy` int(2) NOT NULL,
+  `Waward` int(5) NOT NULL,
+  `Winsurance_and_housingFund` int(5) NOT NULL,
+  `Win_tax` int(5) NOT NULL,
+  `Wautal` int(5) NOT NULL,
+  PRIMARY KEY (`Sno`, `Wdate`) USING BTREE,
+  CONSTRAINT `wages_ibfk_1` FOREIGN KEY (`Sno`) REFERENCES `staff` (`Sno`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- View structure for wautal_1
+-- ----------------------------
+DROP VIEW IF EXISTS `wautal_1`;
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `wautal_1` AS select `wages`.`Wbase` AS `Wbase`,`wages`.`Wsubsidy` AS `Wsubsidy`,`wages`.`Waward` AS `Waward`,`wages`.`Winsurance_and_housingFund` AS `Winsurance_and_housingFund`,`wages`.`Win_tax` AS `Win_tax`,((((`wages`.`Wbase` + `wages`.`Wsubsidy`) + `wages`.`Waward`) - `wages`.`Winsurance_and_housingFund`) - `wages`.`Win_tax`) AS `Wbase+Wsubsidy+Waward-Winsurance_and_housingFund-Win_tax` from `wages`;
+
+-- ----------------------------
+-- Procedure structure for abs
+-- ----------------------------
+DROP PROCEDURE IF EXISTS `abs`;
+delimiter ;;
+CREATE PROCEDURE `abs`()
+BEGIN
+SELECT * FROM staff;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Procedure structure for absent
+-- ----------------------------
+DROP PROCEDURE IF EXISTS `absent`;
+delimiter ;;
+CREATE PROCEDURE `absent`(IN Cleaver_day_in INT,OUT num INT)
+BEGIN
+SELECT COUNT(*)INTO num FROM check_ WHERE Cleaver_day=Cleaver_day_in;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table check_
+-- ----------------------------
+DROP TRIGGER IF EXISTS `tes7`;
+delimiter ;;
+CREATE TRIGGER `tes7` BEFORE INSERT ON `check_` FOR EACH ROW BEGIN
+UPDATE wages SET Waward=Waward+200 WHERE check_.Cleaver_day=0;
+END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Triggers structure for table staff
+-- ----------------------------
+DROP TRIGGER IF EXISTS `tes6`;
+delimiter ;;
+CREATE TRIGGER `tes6` BEFORE INSERT ON `staff` FOR EACH ROW BEGIN
+INSERT INTO users SET Usno=NEW.Sno;
+UPDATE users SET Upassword='123456' WHERE Usno=NEW.Sno ;
+END
+;;
+delimiter ;
+
+SET FOREIGN_KEY_CHECKS = 1;
